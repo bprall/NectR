@@ -81,12 +81,8 @@ new_colony_data <- bind_rows(expanded_colony_data)
 
 merged_data_with_total <- left_join(new_colony_data, new_stressor_data, by = c("year", "month", "state"))
 
-merged_data <- merged_data_with_total %>% filter(state != "United States")
-
-merged_data <- distinct(merged_data)
-
-merged_filtered <- merged_data %>%
-  select(year, month, state, colony_lost_pct, stressor, stress_pct)
+merged_data <- merged_data_with_total %>% filter(state != "United States") %>%
+  distinct()
 ```
 
 ``` {r graphs, echo=FALSE, warning=FALSE}
