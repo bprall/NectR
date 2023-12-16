@@ -80,16 +80,16 @@ merged_data <- left_join(new_colony_data, new_stressor_data, by = c("year", "mon
 ```
 
 ``` {r graphs}
-# Graph of Colony Losses by State
-ggplot(merged_data, aes(x = state, y = colony_lost, fill = state)) +
+# Graph of Colony Losses by State (excluding "United States")
+ggplot(filter(merged_data, state != "United States"), aes(x = state, y = colony_lost, fill = state)) +
   geom_bar(stat = "identity") +
   theme(axis.text.x = element_blank()) +
   labs(title = "Colony Losses by State",
        x = "State",
        y = "Colony Lost")
 
-# Graph of Colony Losses vs. Stress Percentage
-ggplot(merged_data, aes(x = colony_lost, y = stress_pct)) +
+# Graph of Colony Losses vs. Stress Percentage (excluding "United States")
+ggplot(filter(merged_data, state != "United States"), aes(x = colony_lost, y = stress_pct)) +
   geom_point() +
   labs(title = "Colony Losses vs. Stress Percentage",
        x = "Colony Lost",
