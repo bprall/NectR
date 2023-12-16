@@ -1,0 +1,118 @@
+---
+title: "Module 7 Project"
+author: "Group"
+date: "2023-12-15"
+output: html_document
+---
+
+# Introduction
+
+# Methods
+
+# Results
+
+```{r setup, echo=FALSE, warning=FALSE}
+library(tidyverse)
+library(MuMIn)
+
+colony_data <- read.csv("Colony.csv")
+stressor_data <- read.csv("Stressor.csv")
+```
+
+``` {r data prep, echo=FALSE, warning=FALSE}
+# Function to expand rows with month ranges
+expand_months <- function(row, toggle) {
+  year <- row$year
+  state <- row$state
+
+  # Extract start and end months
+  months_range <- strsplit(as.character(row$months), "-")[[1]]
+  start_month <- match(months_range[1], month.name)
+  end_month <- match(months_range[length(months_range)], month.name)
+
+  # Generate a sequence of months
+  expanded_months <- seq(as.Date(paste(year, start_month, "01", sep = "-")),
+                         as.Date(paste(year, end_month, "01", sep = "-")),
+                         by = "1 month")
+
+  # Create a data frame with expanded rows for stressor
+  if (toggle == 0) {
+    data.frame(
+      year = row$year,
+      month = format(expanded_months, "%B"),
+      state = rep(state, length(expanded_months)),
+      stressor = row$stressor,
+      stress_pct = row$stress_pct
+    )
+    # Create a data frame with expanded rows for colony
+  } else {
+    data.frame(
+      year = row$year,
+      month = format(expanded_months, "%B"),
+      state = rep(state, length(expanded_months)),
+      colony_n = row$colony_n,
+      colony_max = row$colony_max,
+      colony_lost = row$colony_lost,
+      colony_lost_pct = row$colony_lost_pct,
+      colony_added = row$colony_added,
+      colony_reno = row$colony_reno,
+      colony_reno_pct = row$colony_reno_pct
+    )
+  }
+}
+
+# Apply the function to each row of stressors
+expanded_stressor_data <- stressor_data %>%
+  rowwise() %>%
+  do(expand_months(.,0))
+
+# Combine the expanded data with the original data
+new_stressor_data <- bind_rows(expanded_stressor_data)
+
+expanded_colony_data <- colony_data %>%
+  rowwise() %>%
+  do(expand_months(.,1))
+
+# Combine the expanded data with the original data
+new_colony_data <- bind_rows(expanded_colony_data)
+
+merged_data <- left_join(new_colony_data, new_stressor_data, by = c("year", "month", "state"))
+```
+
+``` {r graphs}
+# Graph of Colony Losses by State
+ggplot(merged_data, aes(x = state, y = colony_lost, fill = state)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_blank()) +
+  labs(title = "Colony Losses by State",
+       x = "State",
+       y = "Colony Lost")
+
+# Graph of Colony Losses vs. Stress Percentage
+ggplot(merged_data, aes(x = colony_lost, y = stress_pct)) +
+  geom_point() +
+  labs(title = "Colony Losses vs. Stress Percentage",
+       x = "Colony Lost",
+       y = "Stress Percentage")
+```
+
+``` {r models}
+lm_model <- lm(colony_lost_pct ~ stressor + stress_pct, data = merged_data, na.action = na.exclude)
+
+summary(lm_model)
+
+par(mfrow = c(2, 2))
+plot(lm_model)
+
+options(na.action = "na.exclude")
+
+model_selection <- model.sel(lm_model)
+
+options(na.action = "na.omit")
+
+summary(model_selection)
+```
+
+# Discussion
+
+# Contributions
