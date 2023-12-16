@@ -89,13 +89,6 @@ ggplot(merged_data, aes(x = state, y = colony_lost, fill = state)) +
   labs(title = "Colony Losses by State",
        x = "State",
        y = "Colony Lost")
-
-# Graph of Colony Losses vs. Stress Percentage
-ggplot(merged_data, aes(x = colony_lost, y = stress_pct)) +
-  geom_point() +
-  labs(title = "Colony Losses vs. Stress Percentage",
-       x = "Colony Lost",
-       y = "Stress Percentage")
 ```
 
 ``` {r models}
