@@ -11,9 +11,12 @@ output: html_document
 
 # Results
 
-```{r setup, echo=FALSE, warning=FALSE}
+```{r setup, echo=FALSE, warning=FALSE, include=FALSE}
 library(tidyverse)
 library(MuMIn)
+library(effects)
+library(car)
+library(broom)
 
 colony_data <- read.csv("Colony.csv")
 stressor_data <- read.csv("Stressor.csv")
@@ -79,33 +82,63 @@ new_colony_data <- bind_rows(expanded_colony_data)
 merged_data_with_total <- left_join(new_colony_data, new_stressor_data, by = c("year", "month", "state"))
 
 merged_data <- merged_data_with_total %>% filter(state != "United States")
+
+merged_data <- distinct(merged_data)
+
+merged_filtered <- merged_data %>%
+  select(year, month, state, colony_lost_pct, stressor, stress_pct)
 ```
 
-``` {r graphs}
+``` {r graphs, echo=FALSE, warning=FALSE}
 # Graph of Colony Losses by State
 ggplot(merged_data, aes(x = state, y = colony_lost, fill = state)) +
   geom_bar(stat = "identity") +
   theme(axis.text.x = element_blank()) +
   labs(title = "Colony Losses by State",
        x = "State",
-       y = "Colony Lost")
+       y = "Colonies Lost")
+
+# Visualize the distribution of colony losses
+ggplot(merged_data, aes(x = colony_lost_pct)) +
+  geom_histogram(binwidth = 5, fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of Colony Loss Percentage",
+       x = "Colony Loss Percentage",
+       y = "Frequency")
+
+ggplot(merged_data, aes(x = stress_pct, y = colony_lost_pct, color = stressor)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Relationship between Stress Percentage and Colony Loss",
+       x = "Stress Percentage",
+       y = "Colony Loss Percentage") + 
+  theme_minimal()
 ```
 
 ``` {r models}
-lm_model <- lm(colony_lost_pct ~ stressor + stress_pct, data = merged_data, na.action = na.exclude)
+# Create a linear model with interaction terms
+model <- lm(colony_lost_pct ~ stress_pct * stressor, data = merged_data, na.action = na.exclude)
 
-summary(lm_model)
+# Tidy up the model results
+tidy_model <- tidy(model, conf.int=TRUE)
 
-par(mfrow = c(2, 2))
-plot(lm_model)
+tidy_model <- tidy_model %>%
+  filter(term != "(Intercept)")
 
-options(na.action = "na.exclude")
+tidy_model$term <- str_remove(tidy_model$term, "stressor")
 
-model_selection <- model.sel(lm_model)
+# Visualize the effects
+ggplot(tidy_model, aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high)) +
+  geom_point(position = position_dodge(width = 0.5)) +
+  geom_errorbar(width = 0.2, position = position_dodge(width = 0.5)) +
+  labs(title = "Effect of Stressors on Colony Lost Percentage",
+       x = "Stressor",
+       y = "Estimate") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-options(na.action = "na.omit")
-
-summary(model_selection)
+# Run ANOVA to assess overall model significance
+anova_result <- anova(model)
+print(anova_result)
 ```
 
 # Discussion
