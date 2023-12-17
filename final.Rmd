@@ -11,7 +11,7 @@ output: html_document
 
 # Results
 
-```{r setup, echo=FALSE, warning=FALSE}
+```{r setup, echo=FALSE, warning=FALSE, include=FALSE}
 library(tidyverse)
 library(MuMIn)
 library(effects)
@@ -130,7 +130,7 @@ tidy_model <- tidy_model %>%
 tidy_model$term <- str_remove(tidy_model$term, "stressor")
 
 stressor_tidy_model <- tidy_model %>%
-  filter(!grepl(":", term))
+  filter(!grepl("stress_pct", term))
 
 interaction_tidy_model <- tidy_model %>%
   filter(grepl(":", term))
