@@ -121,8 +121,13 @@ ggplot(merged_data, aes(x = stress_pct, y = colony_lost_pct)) +
        y = "Colony Loss Percentage") + 
   theme_minimal()
 
+# Get mean colony lost percentage
+mean_colony_lost_pct_tibble <- selected_columns %>%
+  group_by(state) %>%
+  summarize(mean_colony_lost_pct = mean(colony_lost_pct))
+
 # Graph of Colony Losses by State
-ggplot(merged_data, aes(x = state, y = colony_lost_pct, fill = state)) +
+ggplot(mean_colony_lost_pct_tibble, aes(x = state, y = mean_colony_lost_pct, fill = state)) +
   geom_bar(stat = "identity") +
   theme(axis.text.x = element_blank()) +
   labs(title = "Colony Loss Percentage by State",
