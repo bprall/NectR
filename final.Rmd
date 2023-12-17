@@ -17,10 +17,14 @@ library(MuMIn)
 library(effects)
 library(car)
 library(broom)
+library(knitr)
+library(kableExtra)
 
 colony_data <- read.csv("Colony.csv")
 stressor_data <- read.csv("Stressor.csv")
 ```
+
+
 
 ``` {r data prep, echo=FALSE, warning=FALSE}
 # Function to expand rows with month ranges
@@ -91,15 +95,10 @@ selected_columns <- merged_data %>%
   select(state, year, month, stressor, colony_lost, colony_lost_pct, stress_pct)
 ```
 
-``` {r graphs, echo=FALSE, warning=FALSE}
-# Graph of Colony Losses by State
-ggplot(merged_data, aes(x = state, y = colony_lost, fill = state)) +
-  geom_bar(stat = "identity") +
-  theme(axis.text.x = element_blank()) +
-  labs(title = "Colony Losses by State",
-       x = "State",
-       y = "Colonies Lost")
 
+
+
+``` {r graphs, echo=FALSE, warning=FALSE, message=FALSE}
 # Visualize the distribution of colony losses
 ggplot(merged_data, aes(x = colony_lost_pct)) +
   geom_histogram(binwidth = 5, fill = "blue", color = "black", alpha = 0.7) +
@@ -107,28 +106,72 @@ ggplot(merged_data, aes(x = colony_lost_pct)) +
        x = "Colony Loss Percentage",
        y = "Frequency")
 
-ggplot(merged_data, aes(x = stress_pct, y = colony_lost_pct, color = stressor)) +
+ggplot(merged_data, aes(x = stress_pct, y = colony_lost_pct)) +
   geom_point() +
-  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  geom_smooth(se = FALSE, method = "lm", color = "red") +
   labs(title = "Relationship between Stress Percentage and Colony Loss",
        x = "Stress Percentage",
        y = "Colony Loss Percentage") + 
   theme_minimal()
+
+# Graph of Colony Losses by State
+ggplot(merged_data, aes(x = state, y = colony_lost_pct, fill = state)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_blank()) +
+  labs(title = "Colony Loss Percentage by State",
+       x = "State",
+       y = "Colonies Lost")
+
+create_correlation_plot <- function(x_variable) {
+  # Calculate the mean and standard deviation within the ggplot code
+  plot <- ggplot(selected_columns, aes_string(x = x_variable, y = "colony_lost_pct")) +
+    stat_summary(fun.data = "mean_se", geom = "point", position = position_dodge(width = 0.5)) +
+    stat_summary(fun.data = "mean_se", geom = "errorbar", position = position_dodge(width = 0.5)) +
+    labs(title = paste("Correlation between", x_variable, "and Colony Lost Percentage"),
+         x = x_variable,
+         y = "Colony Lost Percentage") +
+    theme_minimal() + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+  return(plot)
+}
+
+create_correlation_plot("stressor")
+create_correlation_plot("month")
 ```
 
+
+
 ``` {r models, echo=FALSE}
-# Create a linear model with interaction terms
+# Create linear models
 model1 <- lm(colony_lost_pct ~ stress_pct * stressor, data = selected_columns)
-model2 <- lm(colony_lost_pct ~ month, data = selected_columns)
-model3 <- lm(colony_lost_pct ~ stress_pct * stressor + stressor * month, data = selected_columns)
-model4 <- lm(colony_lost_pct ~ stress_pct * stressor * month, data = selected_columns)
+model2 <- lm(colony_lost_pct ~ state * month, data = selected_columns)
+model3 <- lm(colony_lost_pct ~ state * month + stressor, data = selected_columns)
+model4 <- lm(colony_lost_pct ~ state * month + stress_pct * stressor, data = selected_columns)
 
-summary(model1)$adj.r.squared
-summary(model2)$adj.r.squared
-summary(model3)$adj.r.squared
-summary(model4)$adj.r.squared
+# Compare models using summary statistics
+# Your summary table
+summary_table <- data.frame(
+  Model = c("Model 1", "Model 2", "Model 3", "Model 4"),
+  R_squared = c(summary(model1)$r.squared, summary(model2)$r.squared, 
+                summary(model3)$r.squared, summary(model4)$r.squared),
+  Adjusted_R_squared = c(summary(model1)$adj.r.squared, summary(model2)$adj.r.squared, 
+                         summary(model3)$adj.r.squared, summary(model4)$adj.r.squared),
+  MSE = c(mean(resid(model1)^2), mean(resid(model2)^2),
+          mean(resid(model3)^2), mean(resid(model4)^2)),
+  AIC = c(AIC(model1), AIC(model2), AIC(model3), AIC(model4)),
+  BIC = c(BIC(model1), BIC(model2), BIC(model3), BIC(model4))
+)
 
-# Tidy up the model results
+summary_table_kable <- kable(summary_table, format = "html") %>%
+  kable_styling(full_width = FALSE) %>%
+  row_spec(0, bold = TRUE, color = "white", background = "#4CAF50")
+
+summary_table_kable
+
+
+
+# Tidy up model results for visualization
 tidy_model1 <- tidy(model1, conf.int=TRUE)
 
 tidy_model2 <- tidy(model2, conf.int=TRUE)
@@ -148,36 +191,6 @@ stressor_tidy_model <- tidy_model1 %>%
 
 interaction_tidy_model <- tidy_model1 %>%
   filter(grepl(":", term))
-
-# Visualize Stressor impact on colonies
-ggplot(stressor_tidy_model, aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high)) +
-  geom_point(position = position_dodge(width = 0.5)) +
-  geom_errorbar(width = 0.2, position = position_dodge(width = 0.5)) +
-  labs(title = "Effect of Stressors on Colony Lost Percentage",
-       x = "Stressor",
-       y = "Estimate") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-# Visualize Stressor and Stress Percentage Interaction
-ggplot(interaction_tidy_model, aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high)) +
-  geom_point(position = position_dodge(width = 0.5)) +
-  geom_errorbar(width = 0.2, position = position_dodge(width = 0.5)) +
-  labs(title = "Effect of Stressors and Stress Percentage on Colony Lost Percentage",
-       x = "Stressor",
-       y = "Estimate") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-# Visualize month impact on colonies
-ggplot(tidy_model2, aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high)) +
-  geom_point(position = position_dodge(width = 0.5)) +
-  geom_errorbar(width = 0.2, position = position_dodge(width = 0.5)) +
-  labs(title = "Effect of Month on Colony Lost Percentage",
-       x = "Month",
-       y = "Estimate") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 # Discussion
