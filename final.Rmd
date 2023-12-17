@@ -11,7 +11,7 @@ output: html_document
 
 # Results
 
-```{r setup, echo=FALSE, warning=FALSE, include=FALSE}
+```{r setup, echo=FALSE, warning=FALSE}
 library(tidyverse)
 library(MuMIn)
 library(effects)
@@ -81,8 +81,13 @@ new_colony_data <- bind_rows(expanded_colony_data)
 
 merged_data_with_total <- left_join(new_colony_data, new_stressor_data, by = c("year", "month", "state"))
 
-merged_data <- merged_data_with_total %>% filter(state != "United States") %>%
+merged_data <- merged_data_with_total %>% 
+  filter(state != "United States") %>%
+  mutate(stressor = ifelse(stressor == "Disesases", "Diseases", stressor)) %>%
   distinct()
+
+selected_columns <- merged_data %>%
+  select(state, year, month, stressor, colony_lost, colony_lost_pct, stress_pct)
 ```
 
 ``` {r graphs, echo=FALSE, warning=FALSE}
@@ -110,9 +115,11 @@ ggplot(merged_data, aes(x = stress_pct, y = colony_lost_pct, color = stressor)) 
   theme_minimal()
 ```
 
-``` {r models}
+``` {r models, echo=FALSE}
 # Create a linear model with interaction terms
-model <- lm(colony_lost_pct ~ stress_pct * stressor, data = merged_data, na.action = na.exclude)
+model <- lm(colony_lost_pct ~ stress_pct * stressor, data = selected_columns)
+
+summary(model)
 
 # Tidy up the model results
 tidy_model <- tidy(model, conf.int=TRUE)
@@ -122,11 +129,27 @@ tidy_model <- tidy_model %>%
 
 tidy_model$term <- str_remove(tidy_model$term, "stressor")
 
-# Visualize the effects
-ggplot(tidy_model, aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high)) +
+stressor_tidy_model <- tidy_model %>%
+  filter(!grepl(":", term))
+
+interaction_tidy_model <- tidy_model %>%
+  filter(grepl(":", term))
+
+# Visualize stressor
+ggplot(stressor_tidy_model, aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high)) +
   geom_point(position = position_dodge(width = 0.5)) +
   geom_errorbar(width = 0.2, position = position_dodge(width = 0.5)) +
   labs(title = "Effect of Stressors on Colony Lost Percentage",
+       x = "Stressor",
+       y = "Estimate") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Visualize the interaction
+ggplot(interaction_tidy_model, aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high)) +
+  geom_point(position = position_dodge(width = 0.5)) +
+  geom_errorbar(width = 0.2, position = position_dodge(width = 0.5)) +
+  labs(title = "Effect of Stressors and Stress Percentage on Colony Lost Percentage",
        x = "Stressor",
        y = "Estimate") +
   theme_minimal() +
