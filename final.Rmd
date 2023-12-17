@@ -97,21 +97,21 @@ selected_columns <- merged_data %>%
 
 # Introduction
 
-
-
-# Methods
-
-
-
-
-``` {r graphs, echo=FALSE, warning=FALSE, message=FALSE}
+``` {r intro graph}
 # Visualize the distribution of colony losses
 ggplot(merged_data, aes(x = colony_lost_pct)) +
   geom_histogram(binwidth = 5, fill = "blue", color = "black", alpha = 0.7) +
   labs(title = "Distribution of Colony Loss Percentage",
        x = "Colony Loss Percentage",
        y = "Frequency")
+```
 
+# Methods
+
+
+
+
+``` {r methods graphs, echo=FALSE, warning=FALSE, message=FALSE}
 # Visualize relationship between Stress Percentage and Colony Loss Percentage
 ggplot(merged_data, aes(x = stress_pct, y = colony_lost_pct)) +
   geom_point() +
