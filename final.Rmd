@@ -97,7 +97,7 @@ selected_columns <- merged_data %>%
 
 # Introduction
 
-``` {r intro graph}
+``` {r intro graph, echo=FALSE, warning=FALSE, message=FALSE}
 # Visualize the distribution of colony losses
 ggplot(merged_data, aes(x = colony_lost_pct)) +
   geom_histogram(binwidth = 5, fill = "blue", color = "black", alpha = 0.7) +
