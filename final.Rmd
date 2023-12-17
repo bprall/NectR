@@ -5,12 +5,6 @@ date: "2023-12-15"
 output: html_document
 ---
 
-# Introduction
-
-# Methods
-
-# Results
-
 ```{r setup, echo=FALSE, warning=FALSE, include=FALSE}
 library(tidyverse)
 library(MuMIn)
@@ -83,17 +77,29 @@ expanded_colony_data <- colony_data %>%
 # Combine the expanded data with the original data
 new_colony_data <- bind_rows(expanded_colony_data)
 
+# Combine colony and stressor data
 merged_data_with_total <- left_join(new_colony_data, new_stressor_data, by = c("year", "month", "state"))
 
+# Get rid of total value
 merged_data <- merged_data_with_total %>% 
   filter(state != "United States") %>%
   mutate(stressor = ifelse(stressor == "Disesases", "Diseases", stressor)) %>%
   distinct() %>%
   na.omit()
 
+# Columns we will use for analysis
 selected_columns <- merged_data %>%
   select(state, year, month, stressor, colony_lost, colony_lost_pct, stress_pct)
 ```
+
+
+
+
+# Introduction
+
+
+
+# Methods
 
 
 
@@ -106,6 +112,7 @@ ggplot(merged_data, aes(x = colony_lost_pct)) +
        x = "Colony Loss Percentage",
        y = "Frequency")
 
+# Visualize relationship between Stress Percentage and Colony Loss Percentage
 ggplot(merged_data, aes(x = stress_pct, y = colony_lost_pct)) +
   geom_point() +
   geom_smooth(se = FALSE, method = "lm", color = "red") +
@@ -122,6 +129,7 @@ ggplot(merged_data, aes(x = state, y = colony_lost_pct, fill = state)) +
        x = "State",
        y = "Colonies Lost")
 
+# Graph function for column correlation w/ Colony Loss percentage
 create_correlation_plot <- function(x_variable) {
   # Calculate the mean and standard deviation within the ggplot code
   plot <- ggplot(selected_columns, aes_string(x = x_variable, y = "colony_lost_pct")) +
@@ -142,6 +150,13 @@ create_correlation_plot("month")
 
 
 
+
+# Results
+
+
+
+
+
 ``` {r models, echo=FALSE}
 # Create linear models
 model1 <- lm(colony_lost_pct ~ stress_pct * stressor, data = selected_columns)
@@ -149,8 +164,7 @@ model2 <- lm(colony_lost_pct ~ state * month, data = selected_columns)
 model3 <- lm(colony_lost_pct ~ state * month + stressor, data = selected_columns)
 model4 <- lm(colony_lost_pct ~ state * month + stress_pct * stressor, data = selected_columns)
 
-# Compare models using summary statistics
-# Your summary table
+# Compare models
 summary_table <- data.frame(
   Model = c("Model 1", "Model 2", "Model 3", "Model 4"),
   R_squared = c(summary(model1)$r.squared, summary(model2)$r.squared, 
@@ -165,34 +179,17 @@ summary_table <- data.frame(
 
 summary_table_kable <- kable(summary_table, format = "html") %>%
   kable_styling(full_width = FALSE) %>%
-  row_spec(0, bold = TRUE, color = "white", background = "#4CAF50")
+  row_spec(0, bold = TRUE, color = "white", background = "blue")
 
 summary_table_kable
-
-
-
-# Tidy up model results for visualization
-tidy_model1 <- tidy(model1, conf.int=TRUE)
-
-tidy_model2 <- tidy(model2, conf.int=TRUE)
-
-tidy_model2 <- tidy_model2 %>%
-  filter(term != "(Intercept)")
-
-tidy_model1 <- tidy_model1 %>%
-  filter(term != "(Intercept)")
-
-tidy_model2$term <- str_remove(tidy_model2$term, "month")
-
-tidy_model1$term <- str_remove(tidy_model1$term, "stressor")
-
-stressor_tidy_model <- tidy_model1 %>%
-  filter(!grepl("stress_pct", term))
-
-interaction_tidy_model <- tidy_model1 %>%
-  filter(grepl(":", term))
 ```
+
+
 
 # Discussion
 
+
+
 # Contributions
+
+
