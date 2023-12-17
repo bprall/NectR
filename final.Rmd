@@ -84,7 +84,8 @@ merged_data_with_total <- left_join(new_colony_data, new_stressor_data, by = c("
 merged_data <- merged_data_with_total %>% 
   filter(state != "United States") %>%
   mutate(stressor = ifelse(stressor == "Disesases", "Diseases", stressor)) %>%
-  distinct()
+  distinct() %>%
+  na.omit()
 
 selected_columns <- merged_data %>%
   select(state, year, month, stressor, colony_lost, colony_lost_pct, stress_pct)
@@ -117,12 +118,18 @@ ggplot(merged_data, aes(x = stress_pct, y = colony_lost_pct, color = stressor)) 
 
 ``` {r models, echo=FALSE}
 # Create a linear model with interaction terms
-model <- lm(colony_lost_pct ~ stress_pct * stressor, data = selected_columns)
+model1 <- lm(colony_lost_pct ~ stress_pct * stressor, data = selected_columns)
+model2 <- lm(colony_lost_pct ~ month, data = selected_columns)
+model3 <- lm(colony_lost_pct ~ stress_pct * stressor + stressor * month, data = selected_columns)
+model4 <- lm(colony_lost_pct ~ stress_pct * stressor * month, data = selected_columns)
 
-summary(model)
+summary(model1)$adj.r.squared
+summary(model2)$adj.r.squared
+summary(model3)$adj.r.squared
+summary(model4)$adj.r.squared
 
 # Tidy up the model results
-tidy_model <- tidy(model, conf.int=TRUE)
+tidy_model <- tidy(model1, conf.int=TRUE)
 
 tidy_model <- tidy_model %>%
   filter(term != "(Intercept)")
@@ -154,10 +161,6 @@ ggplot(interaction_tidy_model, aes(x = term, y = estimate, ymin = conf.low, ymax
        y = "Estimate") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-# Run ANOVA to assess overall model significance
-anova_result <- anova(model)
-print(anova_result)
 ```
 
 # Discussion
