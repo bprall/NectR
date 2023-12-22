@@ -1,5 +1,5 @@
 ---
-title: "Module 7 Project"
+title: "Final Project"
 author: "Group"
 date: "2023-12-15"
 output: html_document
@@ -193,6 +193,7 @@ summary_table_kable
 @article{Goulson2015, title={Bee declines driven by combined stress from parasites, pesticides, and lack of flowers}, author={Dave Goulson, Elizabeth Nicholls, Cristina Botias, Ellen L. Rotheray}, journal={Science}, year={2015} }
 
 # Contributions
-# Stacey Kim: Sources, Introduction and Analysis
-# Tara Gerjarusak: Analysis and Methods
+## Stacey Kim: Sources, Introduction and Analysis
+## Tara Gerjarusak: Analysis and Methods
+## Blake Prall: Data Prep, Graphs, and Analysis
 
