@@ -3,6 +3,7 @@ title: "True_Final"
 author: "Phil Kaplan"
 date: "2023-12-22"
 output: html_document
+bibliography: Final_Bibliography.bib
 ---
 ```{r setup, echo=FALSE, warning=FALSE, include=FALSE}
 library(tidyverse)
@@ -168,13 +169,15 @@ Anova(fit_best)
   The ANOVA test of the best fitting model indicates that variables month, state, stress_pct, and stressor and interactions month:stress_pct, stress_pct:stressor, and month:stress_pct:stressor are statistically significant predictors of colony loss percentage. Notably, interaction month:stressor contributes to the best model but is not statistically significant.
   The graph of colony loss percentage versus stress percentage indicates that there is a positive relationship between these two variables. The graph of colony loss percentage by state indiates that Alabama, Arizona, and Arkansas had the greatest colony percentage. There is not a clear relationship between relative geographic region and colony loss percentage from the graph although state is a statistically significant predictor. The graph of colony loss percentage by stressor indicates that pesticides and diseases are the greatest known contributers to the percent of colony loss. This is consistent with the findings of @Goulson2015 which indicated that pesticide exposure can decrease bee immune responses. The graph of colony loss percentage vs state indicates that the months with the greatest percentage of colony loss occur between October - March. This is consistent with the findings of @Steinhauer2023 that the greatest colony loss often occurs during the winter months. Notably, conditions over the summer are a significant predictor of winter survival @calovi2021summer. 
   
-# Sources
-
-
-
-
 # Contributions
 Stacey Kim: Sources, Introduction and Analysis
 Tara Gerjarusak: Analysis and Methods
 Blake Prall: Data Prep, Graphs, and Analysis
 Phil: Code & Discussion 
+
+# Sources
+
+
+
+
+
