@@ -121,7 +121,7 @@ ggplot(merged_data, aes(x = stress_pct, y = colony_lost_pct)) +
        y = "Colony Loss Percentage") + 
   theme_minimal()
 
-# Graph of Colony Losses by State REORDER
+# Graph of Colony Losses by State 
 ggplot(merged_data, aes(x = state, y = colony_lost_pct, fill = state)) +
   geom_bar(stat = "identity") +
   theme(axis.text.x = element_blank()) +
@@ -150,6 +150,13 @@ create_correlation_plot <- function(x_variable) {
 }
 
 create_correlation_plot("stressor")
+
+
+month_order <- c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+
+# Convert "month" to a factor with the custom order
+selected_columns$month <- factor(selected_columns$month, levels = month_order)
+
 create_correlation_plot("month")
 ```
 
@@ -163,60 +170,16 @@ create_correlation_plot("month")
 
 
 ``` {r models, echo=FALSE}
-# Create linear models
-
-model4 <- lm(colony_lost_pct ~ state * month * stress_pct * stressor, data = selected_columns)
-#Save dredge output 
-dredge(model4)
-get.models() # Arrange by AIC weight 
-Anova("best model")
-```
-
-```{r}
-full_model <- lm(colony_lost_pct ~ state * month * stress_pct * stressor, data = selected_columns, na.action = "na.fail")
-
-# Stepwise variable selection using AIC
-stepwise_model <- step(full_model, direction = "both")
-
-anova(stepwise_model)
-dredge(stepwise_model)
-
-# View the final model summary
-summary(stepwise_model)
-```
-
-
-```{r}
-# Assuming 'data' is your dataset with columns: colony_lost_pct, state, month, stress_pct, stressor
-install.packages("glmnet")
-library(glmnet)
-
-# Prepare data
-X <- model.matrix(colony_lost_pct ~ state + month + stress_pct + stressor, data = selected_columns)
-y <- selected_columns$colony_lost_pct
-
-# Fit LASSO model with cross-validation
-lasso_model <- cv.glmnet(X, y, alpha = 1)  # alpha = 1 for LASSO
-
-# Display optimal lambda
-best_lambda <- lasso_model$lambda.min
-print(paste("Optimal lambda:", best_lambda))
-
-# Extract coefficients from the model using the optimal lambda
-lasso_coefficients <- coef(lasso_model, s = best_lambda)
-print(lasso_coefficients)
-
-an
-```
-```{r}
-Final_Model <- lm(formula =  colony_lost_pct ~ state + month + stress_pct + stressor + state:month + state:stress_pct + month:stress_pct + state:stressor + 
-stress_pct:stressor + state:stress_pct:stressor, data = selected_columns)
-
-summary(Final_Model)
+fit1 <- lm(colony_lost_pct ~ stress_pct *stressor*month+state, data = selected_columns,na.action = "na.fail")
+fit_dr <- dredge(fit1)
+fit_dr %>% view
+fit_best <- get.models(fit_dr,subset = 1)[[1]]
+Anova(fit_best)
 ```
 
 
 # Discussion
+
 
 
 
